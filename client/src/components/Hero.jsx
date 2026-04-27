@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { analyzeVideo } from '../api';
 import Loader from './Loader';
 import ResultCard from './ResultCard';
@@ -9,16 +8,11 @@ export default function Hero() {
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
-  const navigate = useNavigate();
   const toast = useToast();
 
   async function handleAnalyze(e) {
     e.preventDefault();
     if (!url.trim()) return;
-    if (!localStorage.getItem('token')) {
-      navigate('/register');
-      return;
-    }
     setLoading(true);
     setResult(null);
     try {

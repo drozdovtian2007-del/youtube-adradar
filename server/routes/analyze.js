@@ -2,10 +2,8 @@ const express = require('express');
 const router = express.Router();
 const { extractVideoId, getVideoInfo, getCaptions } = require('../services/youtubeService');
 const { analyzeAds } = require('../services/claudeService');
-const { getCache, setCache, saveHistory } = require('../services/cacheService');
-const { authMiddleware } = require('../middleware/auth');
-
-router.post('/', authMiddleware, async (req, res) => {
+const { getCache, setCache } = require('../services/cacheService');
+router.post('/', async (req, res) => {
   try {
     const { url } = req.body;
     if (!url) return res.status(400).json({ error: 'Укажите ссылку на видео' });
@@ -15,7 +13,6 @@ router.post('/', authMiddleware, async (req, res) => {
 
     const cached = await getCache(videoId);
     if (cached) {
-      await saveHistory(req.user?.id, cached.id);
       return res.json({
         fromCache: true,
         videoId,
@@ -32,8 +29,7 @@ router.post('/', authMiddleware, async (req, res) => {
 
     const ads = await analyzeAds({ ...videoInfo, captions });
 
-    const entry = await setCache(videoId, videoInfo.title, videoInfo.channelName, ads);
-    await saveHistory(req.user?.id, entry.id);
+    await setCache(videoId, videoInfo.title, videoInfo.channelName, ads);
 
     res.json({
       fromCache: false,
