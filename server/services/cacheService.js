@@ -1,35 +1,24 @@
-const db = require('../db/database');
+const pool = require('../db/database');
 
-function getCache(videoId) {
-  return new Promise((resolve, reject) => {
-    db.get('SELECT * FROM video_cache WHERE video_id = ?', [videoId], (err, row) => {
-      if (err) reject(err); else resolve(row);
-    });
-  });
+async function getCache(videoId) {
+  const { rows } = await pool.query('SELECT * FROM video_cache WHERE video_id = $1', [videoId]);
+  return rows[0] || null;
 }
 
-function setCache(videoId, videoTitle, channelName, resultJson) {
-  return new Promise((resolve, reject) => {
-    db.run(
-      'INSERT OR REPLACE INTO video_cache (video_id, video_title, channel_name, result_json) VALUES (?, ?, ?, ?)',
-      [videoId, videoTitle, channelName, JSON.stringify(resultJson)],
-      function(err) {
-        if (err) return reject(err);
-        db.get('SELECT * FROM video_cache WHERE video_id = ?', [videoId], (err2, row) => {
-          if (err2) reject(err2); else resolve(row);
-        });
-      }
-    );
-  });
+async function setCache(videoId, videoTitle, channelName, resultJson) {
+  const { rows } = await pool.query(
+    `INSERT INTO video_cache (video_id, video_title, channel_name, result_json)
+     VALUES ($1, $2, $3, $4)
+     ON CONFLICT (video_id) DO UPDATE SET result_json = EXCLUDED.result_json, analyzed_at = NOW()
+     RETURNING *`,
+    [videoId, videoTitle, channelName, JSON.stringify(resultJson)]
+  );
+  return rows[0];
 }
 
-function saveHistory(userId, videoCacheId) {
-  if (!userId) return Promise.resolve();
-  return new Promise((resolve, reject) => {
-    db.run('INSERT INTO user_history (user_id, video_cache_id) VALUES (?, ?)', [userId, videoCacheId], (err) => {
-      if (err) reject(err); else resolve();
-    });
-  });
+async function saveHistory(userId, videoCacheId) {
+  if (!userId) return;
+  await pool.query('INSERT INTO user_history (user_id, video_cache_id) VALUES ($1, $2)', [userId, videoCacheId]);
 }
 
 module.exports = { getCache, setCache, saveHistory };
