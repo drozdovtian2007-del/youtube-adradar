@@ -8,7 +8,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-runMigrations();
+runMigrations().catch(err => console.error('Migration error:', err.message));
 
 app.use('/api/analyze', require('./routes/analyze'));
 app.use('/api/auth', require('./routes/auth'));
