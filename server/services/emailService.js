@@ -1,45 +1,23 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
-let transporter = null;
-let previewUrl = null;
-
-async function getTransporter() {
-  if (transporter) return transporter;
-
-  if (process.env.SMTP_USER && process.env.SMTP_PASS) {
-    transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: Number(process.env.SMTP_PORT || 465),
-      secure: String(process.env.SMTP_SECURE || 'true') === 'true',
-      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
-    });
-  } else {
-    const testAccount = await nodemailer.createTestAccount();
-    transporter = nodemailer.createTransport({
-      host: 'smtp.ethereal.email',
-      port: 587,
-      secure: false,
-      auth: { user: testAccount.user, pass: testAccount.pass }
-    });
-    console.log('📧 Ethereal SMTP активирован. Письма видны на https://ethereal.email');
-    console.log(`   Логин: ${testAccount.user}  Пароль: ${testAccount.pass}`);
-  }
-  return transporter;
-}
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 function generateCode() {
   return String(Math.floor(100000 + Math.random() * 900000));
 }
 
 async function sendVerificationCode(email, code) {
-  const transport = await getTransporter();
-  const from = process.env.SMTP_FROM || process.env.SMTP_USER || '"YouTube AdRadar" <no-reply@adradar.test>';
+  if (!resend) {
+    console.log(`📬 [DEV] Код для ${email}: ${code}`);
+    return;
+  }
 
-  const info = await transport.sendMail({
-    from: `"YouTube AdRadar" <${from}>`,
+  const from = process.env.EMAIL_FROM || 'YouTube AdRadar <onboarding@resend.dev>';
+
+  const { error } = await resend.emails.send({
+    from,
     to: email,
     subject: 'Код подтверждения YouTube AdRadar',
-    text: `Ваш код подтверждения: ${code}\nКод действителен 15 минут.`,
     html: `<div style="font-family:sans-serif;max-width:400px;margin:auto">
       <h2 style="color:#a855f7">YouTube AdRadar</h2>
       <p>Ваш код подтверждения:</p>
@@ -48,11 +26,7 @@ async function sendVerificationCode(email, code) {
     </div>`
   });
 
-  const preview = nodemailer.getTestMessageUrl(info);
-  if (preview) {
-    console.log(`📬 Код для ${email}: ${code}`);
-    console.log(`   Посмотреть письмо: ${preview}`);
-  }
+  if (error) throw new Error(error.message || 'Resend send error');
 }
 
 module.exports = { sendVerificationCode, generateCode };

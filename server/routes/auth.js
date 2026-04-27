@@ -11,11 +11,7 @@ async function issueAndSendCode(userId, email) {
   const code = generateCode();
   const expires = new Date(Date.now() + CODE_TTL_MS).toISOString();
   await pool.query('UPDATE users SET verification_code = $1, verification_expires_at = $2 WHERE id = $3', [code, expires, userId]);
-  try {
-    await sendVerificationCode(email, code);
-  } catch (e) {
-    console.error('Не удалось отправить email:', e.message);
-  }
+  sendVerificationCode(email, code).catch(e => console.error('Не удалось отправить email:', e.message));
 }
 
 router.post('/register', async (req, res) => {
