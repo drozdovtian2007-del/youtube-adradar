@@ -43,22 +43,24 @@ export default function Hero() {
   }
 
   const pct = remaining !== null ? Math.round((remaining / limit) * 100) : null;
-  const barColor = remaining === 0 ? 'bg-red-500' : remaining <= 3 ? 'bg-yellow-400' : 'bg-purple-500';
+  const isLow = remaining !== null && remaining <= 2 && remaining > 0;
+  const isEmpty = remaining === 0;
+  const barColor = isEmpty ? 'bg-red-500' : isLow ? 'bg-red-400' : remaining <= 4 ? 'bg-yellow-400' : 'bg-purple-500';
 
   return (
     <div className="min-h-screen pt-28 pb-16 px-4">
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12 fade-up">
-          <div className="text-7xl mb-4 float-y inline-block logo-3d">📡</div>
-          <h1 className="text-6xl font-bold mb-4 tracking-tight">
+          <div className="text-8xl mb-6 float-y inline-block logo-3d">📡</div>
+          <h1 className="text-7xl sm:text-8xl font-black mb-6 tracking-tight leading-none brand-heading">
             <span className="brand-title">AdsRadar</span>
           </h1>
-          <p className="text-white/70 text-xl">Найди все рекламные интеграции в любом YouTube видео</p>
+          <p className="text-white/70 text-2xl font-light max-w-xl mx-auto leading-relaxed">Найди все рекламные интеграции в любом YouTube видео</p>
         </div>
 
         {/* Input */}
-        <div className="glass p-6 mb-4 fade-up tilt">
+        <div className="glass p-8 mb-4 fade-up tilt">
           <form onSubmit={handleAnalyze} className="flex flex-col sm:flex-row gap-3">
             <input
               className="input-glass flex-1"
@@ -74,18 +76,29 @@ export default function Hero() {
 
         {/* Limit bar */}
         {remaining !== null && (
-          <div className="glass px-5 py-3 mb-8 fade-up flex items-center gap-4">
-            <span className="text-white/50 text-sm whitespace-nowrap">
-              Запросов сегодня: <span className={remaining === 0 ? 'text-red-400' : 'text-white'}>{remaining}</span> / {limit}
-            </span>
-            <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
+          <div className={`glass px-6 py-4 mb-8 fade-up ${isLow || isEmpty ? 'limit-danger' : ''}`}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-white/50 text-base">Запросов сегодня</span>
+                {(isLow || isEmpty) && (
+                  <span className="limit-warn-badge">
+                    {isEmpty ? '🚫 Лимит исчерпан' : '⚠️ Почти закончились'}
+                  </span>
+                )}
+              </div>
+              <span className={`limit-counter ${isEmpty ? 'text-red-400 limit-pulse' : isLow ? 'text-red-400 limit-pulse' : 'text-white'}`}>
+                <span className="limit-num">{remaining}</span>
+                <span className="text-white/30 text-xl"> / {limit}</span>
+              </span>
+            </div>
+            <div className="h-2.5 bg-white/10 rounded-full overflow-hidden">
               <div
-                className={`h-full rounded-full transition-all duration-500 ${barColor}`}
+                className={`h-full rounded-full transition-all duration-700 ${barColor} ${(isLow || isEmpty) ? 'limit-bar-glow' : ''}`}
                 style={{ width: `${pct}%` }}
               />
             </div>
-            {remaining === 0 && (
-              <span className="text-red-400 text-xs whitespace-nowrap">Сброс в полночь UTC</span>
+            {isEmpty && (
+              <p className="text-red-400/80 text-sm mt-2 text-center">Сброс произойдёт в полночь по UTC</p>
             )}
           </div>
         )}
