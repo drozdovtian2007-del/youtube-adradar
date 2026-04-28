@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { analyzeVideo, getLimits } from '../api';
 import Loader from './Loader';
 import ResultCard from './ResultCard';
@@ -10,6 +10,8 @@ export default function Hero() {
   const [result, setResult] = useState(null);
   const [remaining, setRemaining] = useState(null);
   const [limit, setLimit] = useState(10);
+  const [inputFocused, setInputFocused] = useState(false);
+  const inputRef = useRef(null);
   const toast = useToast();
 
   useEffect(() => {
@@ -20,8 +22,8 @@ export default function Hero() {
   }, []);
 
   async function handleAnalyze(e) {
-    e.preventDefault();
-    if (!url.trim()) return;
+    e?.preventDefault();
+    if (!url.trim() || loading || remaining === 0) return;
     setLoading(true);
     setResult(null);
     try {
@@ -30,7 +32,9 @@ export default function Hero() {
       if (res.data.remaining !== undefined) setRemaining(res.data.remaining);
       const count = res.data.ads.length;
       toast.show(
-        count > 0 ? `Найдено ${count} рекламн${count === 1 ? 'ая интеграция' : count < 5 ? 'ые интеграции' : 'ых интеграций'}` : 'Реклама не найдена',
+        count > 0
+          ? `Найдено ${count} рекламн${count === 1 ? 'ая интеграция' : count < 5 ? 'ые интеграции' : 'ых интеграций'}`
+          : 'Реклама не найдена',
         count > 0 ? 'success' : 'info'
       );
     } catch (err) {
@@ -46,37 +50,116 @@ export default function Hero() {
   const isLow = remaining !== null && remaining <= 2 && remaining > 0;
   const isEmpty = remaining === 0;
   const barColor = isEmpty ? 'bg-red-500' : isLow ? 'bg-red-400' : remaining <= 4 ? 'bg-yellow-400' : 'bg-purple-500';
+  const isActive = inputFocused || url.length > 0;
 
   return (
-    <div className="min-h-screen pt-28 pb-16 px-4">
-      <div className="max-w-3xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-12 fade-up">
-          <div className="text-8xl mb-6 float-y inline-block logo-3d">📡</div>
-          <h1 className="text-7xl sm:text-8xl font-black mb-6 tracking-tight leading-none brand-heading">
+    <div className="min-h-screen flex flex-col items-center justify-center pt-24 pb-16 px-4">
+      <div className="w-full max-w-2xl mx-auto flex flex-col items-center">
+
+        {/* Title */}
+        <div className="text-center mb-8 fade-up">
+          <h1 className="text-6xl sm:text-7xl font-black mb-3 tracking-tight brand-heading">
             <span className="brand-title">AdsRadar</span>
           </h1>
-          <p className="text-white/70 text-2xl font-light max-w-xl mx-auto leading-relaxed">Найди все рекламные интеграции в любом YouTube видео</p>
+          <p className="text-white/45 text-lg">Найди рекламные интеграции в любом YouTube видео</p>
         </div>
 
-        {/* Input */}
-        <div className="glass p-8 mb-4 fade-up tilt">
-          <form onSubmit={handleAnalyze} className="flex flex-col sm:flex-row gap-3">
-            <input
-              className="input-glass flex-1"
-              placeholder="Вставь ссылку на YouTube видео..."
-              value={url}
-              onChange={e => setUrl(e.target.value)}
-            />
-            <button className="btn-primary whitespace-nowrap" type="submit" disabled={loading || !url.trim() || remaining === 0}>
-              Анализировать
-            </button>
-          </form>
+        {/* Portal wrapper — breathing room for outer rings */}
+        <div className="fade-up" style={{ padding: '56px', marginBottom: '28px' }}>
+          <div className="portal-wrap">
+
+            {/* Outermost faint ring */}
+            <div className="portal-ring-4" />
+
+            {/* Ring 3 — pink, slow */}
+            <div className="portal-ring-3" />
+            {[0,1,2,3,4].map(i => (
+              <div key={`p3-${i}`} style={{
+                position:'absolute', inset:'-28px', borderRadius:'50%',
+                animation:'portalSpin 22s linear infinite',
+                animationDelay:`${-(i/5)*22}s`,
+                pointerEvents:'none'
+              }}>
+                <div style={{
+                  position:'absolute', width:5, height:5, borderRadius:'50%',
+                  background:'#f472b6', top:-2.5, left:'calc(50% - 2.5px)',
+                  boxShadow:'0 0 8px #f472b6, 0 0 3px rgba(255,255,255,0.6)'
+                }}/>
+              </div>
+            ))}
+
+            {/* Ring 2 — blue dashed, medium */}
+            <div className={`portal-ring-2 ${isActive ? 'portal-ring-2-active' : ''}`} />
+            {[0,1,2].map(i => (
+              <div key={`p2-${i}`} style={{
+                position:'absolute', inset:'-14px', borderRadius:'50%',
+                animation:'portalSpin 12s linear infinite reverse',
+                animationDelay:`${-(i/3)*12}s`,
+                pointerEvents:'none'
+              }}>
+                <div style={{
+                  position:'absolute', width:8, height:8, borderRadius:'50%',
+                  background:'#60a5fa', top:-4, left:'calc(50% - 4px)',
+                  boxShadow:'0 0 14px #60a5fa, 0 0 5px rgba(255,255,255,0.8)'
+                }}/>
+              </div>
+            ))}
+
+            {/* Main portal circle */}
+            <div
+              className={`portal-main${isActive ? ' portal-main-active' : ''}${loading ? ' portal-main-loading' : ''}`}
+              onClick={() => inputRef.current?.focus()}
+            >
+              {/* Radar sweep */}
+              <div className={`portal-sweep${loading ? ' portal-sweep-fast' : ''}`} />
+
+              {/* Subtle inner rings */}
+              <div className="portal-inner-ring-1" />
+              <div className="portal-inner-ring-2" />
+
+              {/* Tick marks at 0/90/180/270° */}
+              {[0,90,180,270].map(deg => (
+                <div key={deg} style={{
+                  position:'absolute', inset:0, pointerEvents:'none',
+                  transform:`rotate(${deg}deg)`
+                }}>
+                  <div style={{
+                    position:'absolute', top:6, left:'calc(50% - 1px)',
+                    width:2, height:12,
+                    background:'rgba(124,58,237,0.4)',
+                    borderRadius:2
+                  }}/>
+                </div>
+              ))}
+
+              {/* Center content */}
+              <div className="portal-content">
+                <input
+                  ref={inputRef}
+                  className="portal-input"
+                  placeholder="Вставь ссылку..."
+                  value={url}
+                  onChange={e => setUrl(e.target.value)}
+                  onFocus={() => setInputFocused(true)}
+                  onBlur={() => setInputFocused(false)}
+                  onKeyDown={e => e.key === 'Enter' && handleAnalyze()}
+                  disabled={loading}
+                />
+                <button
+                  className="portal-scan-btn"
+                  onClick={handleAnalyze}
+                  disabled={loading || !url.trim() || remaining === 0}
+                >
+                  {loading ? '...' : 'Анализировать'}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Limit bar */}
         {remaining !== null && (
-          <div className={`glass px-6 py-4 mb-8 fade-up ${isLow || isEmpty ? 'limit-danger' : ''}`}>
+          <div className={`glass px-6 py-4 mb-6 w-full fade-up ${isLow || isEmpty ? 'limit-danger' : ''}`}>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <span className="text-white/50 text-base">Запросов сегодня</span>
@@ -107,7 +190,7 @@ export default function Hero() {
 
         {/* Results */}
         {result && (
-          <div className="glass p-6 fade-up">
+          <div className="glass p-6 fade-up w-full">
             <div className="mb-6">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div>
