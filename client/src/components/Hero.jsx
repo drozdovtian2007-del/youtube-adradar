@@ -4,6 +4,37 @@ import Loader from './Loader';
 import ResultCard from './ResultCard';
 import { useToast } from './Toast';
 
+const SWEEP_S = 3; // sweep rotation duration (must match portal-sweep animation)
+
+// Blips in the donut zone (r=36..48 % of portal radius, % coords from center)
+const RADAR_BLIPS = [
+  { angle: 18,  r: 42 }, { angle: 52,  r: 38 }, { angle: 83,  r: 45 },
+  { angle: 118, r: 40 }, { angle: 147, r: 46 }, { angle: 173, r: 37 },
+  { angle: 211, r: 43 }, { angle: 248, r: 41 }, { angle: 279, r: 47 },
+  { angle: 312, r: 39 }, { angle: 341, r: 44 }, { angle: 65,  r: 36 },
+  { angle: 195, r: 48 }, { angle: 298, r: 37 },
+];
+
+function blipStyle(angle, r) {
+  const rad = (angle - 90) * (Math.PI / 180);
+  const x = 50 + r * Math.cos(rad);
+  const y = 50 + r * Math.sin(rad);
+  const delay = -((angle / 360) * SWEEP_S);
+  return {
+    position: 'absolute',
+    left: `${x}%`, top: `${y}%`,
+    width: 6, height: 6,
+    borderRadius: '50%',
+    background: '#a78bfa',
+    boxShadow: '0 0 8px #a78bfa',
+    transform: 'translate(-50%, -50%)',
+    animation: `radarBlip ${SWEEP_S}s linear infinite`,
+    animationDelay: `${delay}s`,
+    pointerEvents: 'none',
+    zIndex: 8,
+  };
+}
+
 export default function Hero() {
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
@@ -116,6 +147,11 @@ export default function Hero() {
               {/* Subtle inner rings */}
               <div className="portal-inner-ring-1" />
               <div className="portal-inner-ring-2" />
+
+              {/* Radar blips — animate in sync with sweep */}
+              {RADAR_BLIPS.map((b, i) => (
+                <div key={`blip-${i}`} style={blipStyle(b.angle, b.r)} />
+              ))}
 
               {/* Tick marks at 0/90/180/270° */}
               {[0,90,180,270].map(deg => (
