@@ -10,6 +10,7 @@ app.use(express.json());
 
 runMigrations().catch(err => console.error('Migration error:', err.message));
 
+app.use('/api/auth', require('./routes/auth'));
 app.use('/api/analyze', require('./routes/analyze'));
 
 const clientDist = path.join(__dirname, '../client/dist');

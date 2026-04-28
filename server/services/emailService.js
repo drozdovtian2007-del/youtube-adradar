@@ -1,21 +1,29 @@
-const { Resend } = require('resend');
+const nodemailer = require('nodemailer');
 
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+let transporter = null;
+if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+  transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT) || 465,
+    secure: String(process.env.SMTP_SECURE || 'true') === 'true',
+    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+  });
+}
 
 function generateCode() {
   return String(Math.floor(100000 + Math.random() * 900000));
 }
 
 async function sendVerificationCode(email, code) {
-  if (!resend) {
+  if (!transporter) {
     console.log(`📬 [DEV] Код для ${email}: ${code}`);
     return;
   }
 
-  const from = process.env.EMAIL_FROM || 'YouTube AdRadar <onboarding@resend.dev>';
+  const from = process.env.SMTP_FROM || process.env.SMTP_USER;
 
-  const { error } = await resend.emails.send({
-    from,
+  await transporter.sendMail({
+    from: `YouTube AdRadar <${from}>`,
     to: email,
     subject: 'Код подтверждения YouTube AdRadar',
     html: `<div style="font-family:sans-serif;max-width:400px;margin:auto">
@@ -25,8 +33,6 @@ async function sendVerificationCode(email, code) {
       <p style="color:#6b7280;font-size:13px">Код действителен 15 минут. Если вы не регистрировались — проигнорируйте это письмо.</p>
     </div>`
   });
-
-  if (error) throw new Error(error.message || 'Resend send error');
 }
 
 module.exports = { sendVerificationCode, generateCode };

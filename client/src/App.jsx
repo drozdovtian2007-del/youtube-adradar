@@ -4,6 +4,9 @@ import Navbar from './components/Navbar';
 import Cursor from './components/Cursor';
 import { ToastProvider } from './components/Toast';
 import Home from './pages/Home';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Verify from './pages/Verify';
 
 export default function App() {
   return (
@@ -18,6 +21,9 @@ export default function App() {
       <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/verify" element={<Verify />} />
       </Routes>
       <footer className="text-center py-6 text-white/30 text-sm">
         Created by{' '}
