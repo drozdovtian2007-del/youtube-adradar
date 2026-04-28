@@ -1,17 +1,7 @@
-const nodemailer = require('nodemailer');
-
+const BREVO_API_KEY = process.env.BREVO_API_KEY;
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
-const EMAIL_FROM = process.env.EMAIL_FROM || 'YouTube AdRadar <onboarding@resend.dev>';
-
-let transporter = null;
-if (!RESEND_API_KEY && process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
-  transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT) || 587,
-    secure: String(process.env.SMTP_SECURE || 'false') === 'true',
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
-  });
-}
+const EMAIL_FROM = process.env.EMAIL_FROM || 'drozdovtian2007@gmail.com';
+const EMAIL_FROM_NAME = process.env.EMAIL_FROM_NAME || 'YouTube AdRadar';
 
 function generateCode() {
   return String(Math.floor(100000 + Math.random() * 900000));
@@ -26,38 +16,50 @@ function buildHtml(code) {
   </div>`;
 }
 
-async function sendVerificationCode(email, code) {
-  if (RESEND_API_KEY) {
-    const resp = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${RESEND_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        from: EMAIL_FROM,
-        to: email,
-        subject: 'Код подтверждения YouTube AdRadar',
-        html: buildHtml(code)
-      })
-    });
-    if (!resp.ok) {
-      const text = await resp.text();
-      throw new Error(`Resend ${resp.status}: ${text}`);
-    }
-    return;
+async function sendViaBrevo(email, code) {
+  const resp = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'api-key': BREVO_API_KEY,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    },
+    body: JSON.stringify({
+      sender: { name: EMAIL_FROM_NAME, email: EMAIL_FROM },
+      to: [{ email }],
+      subject: 'Код подтверждения YouTube AdRadar',
+      htmlContent: buildHtml(code)
+    })
+  });
+  if (!resp.ok) {
+    const text = await resp.text();
+    throw new Error(`Brevo ${resp.status}: ${text}`);
   }
+}
 
-  if (transporter) {
-    await transporter.sendMail({
-      from: `YouTube AdRadar <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+async function sendViaResend(email, code) {
+  const resp = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${RESEND_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      from: `${EMAIL_FROM_NAME} <${EMAIL_FROM}>`,
       to: email,
       subject: 'Код подтверждения YouTube AdRadar',
       html: buildHtml(code)
-    });
-    return;
+    })
+  });
+  if (!resp.ok) {
+    const text = await resp.text();
+    throw new Error(`Resend ${resp.status}: ${text}`);
   }
+}
 
+async function sendVerificationCode(email, code) {
+  if (BREVO_API_KEY) return sendViaBrevo(email, code);
+  if (RESEND_API_KEY) return sendViaResend(email, code);
   console.log(`📬 [DEV] Код для ${email}: ${code}`);
 }
 
