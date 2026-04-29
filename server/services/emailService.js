@@ -1,5 +1,3 @@
-const BREVO_API_KEY = process.env.BREVO_API_KEY;
-const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const EMAIL_FROM = process.env.EMAIL_FROM || 'drozdovtian2007@gmail.com';
 const EMAIL_FROM_NAME = process.env.EMAIL_FROM_NAME || 'YouTube AdRadar';
 
@@ -17,6 +15,8 @@ function buildHtml(code) {
 }
 
 async function sendViaBrevo(email, code) {
+  const BREVO_API_KEY = process.env.BREVO_API_KEY;
+  console.log('Using Brevo, key starts with:', BREVO_API_KEY ? BREVO_API_KEY.slice(0, 8) : 'EMPTY');
   const resp = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
     headers: {
@@ -38,6 +38,7 @@ async function sendViaBrevo(email, code) {
 }
 
 async function sendViaResend(email, code) {
+  const RESEND_API_KEY = process.env.RESEND_API_KEY;
   const resp = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
@@ -58,9 +59,12 @@ async function sendViaResend(email, code) {
 }
 
 async function sendVerificationCode(email, code) {
+  const BREVO_API_KEY = process.env.BREVO_API_KEY;
+  const RESEND_API_KEY = process.env.RESEND_API_KEY;
+  console.log('Email service: BREVO_API_KEY set:', !!BREVO_API_KEY, '| RESEND_API_KEY set:', !!RESEND_API_KEY);
   if (BREVO_API_KEY) return sendViaBrevo(email, code);
   if (RESEND_API_KEY) return sendViaResend(email, code);
-  console.log(`📬 [DEV] Код для ${email}: ${code}`);
+  console.log(`[DEV] Код для ${email}: ${code}`);
 }
 
 module.exports = { sendVerificationCode, generateCode };
