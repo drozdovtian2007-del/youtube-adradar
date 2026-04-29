@@ -16,7 +16,6 @@ function buildHtml(code) {
 
 async function sendViaBrevo(email, code) {
   const BREVO_API_KEY = process.env.BREVO_API_KEY;
-  console.log('Using Brevo, key starts with:', BREVO_API_KEY ? BREVO_API_KEY.slice(0, 8) : 'EMPTY');
   const resp = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
     headers: {
@@ -59,8 +58,6 @@ async function sendViaResend(email, code) {
 }
 
 async function sendVerificationCode(email, code) {
-  const BREVO_API_KEY = process.env.BREVO_API_KEY;
-  console.log('BREVO_API_KEY length:', BREVO_API_KEY ? BREVO_API_KEY.length : 0);
   return sendViaBrevo(email, code);
 }
 
