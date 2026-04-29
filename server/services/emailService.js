@@ -60,11 +60,8 @@ async function sendViaResend(email, code) {
 
 async function sendVerificationCode(email, code) {
   const BREVO_API_KEY = process.env.BREVO_API_KEY;
-  const RESEND_API_KEY = process.env.RESEND_API_KEY;
-  console.log('Email service: BREVO_API_KEY set:', !!BREVO_API_KEY, '| RESEND_API_KEY set:', !!RESEND_API_KEY);
-  if (BREVO_API_KEY) return sendViaBrevo(email, code);
-  if (RESEND_API_KEY) return sendViaResend(email, code);
-  console.log(`[DEV] Код для ${email}: ${code}`);
+  console.log('BREVO_API_KEY length:', BREVO_API_KEY ? BREVO_API_KEY.length : 0);
+  return sendViaBrevo(email, code);
 }
 
 module.exports = { sendVerificationCode, generateCode };
